@@ -9,6 +9,7 @@ class BaseCRUD:
     FIELDS = []
     ANNOTATIONS = {}
     SUB_CLASSES = {}
+    ALWAYS_LIST = True
 
     def __init__(self, filters):
         # self.url_path = self.URL_PATH
@@ -35,7 +36,7 @@ class BaseCRUD:
                     item[model_class.__name__] = []
                 item[model_class.__name__] = list(model_class.filter(id=item[relation_key]).values())
 
-        if len(res) == 1:
+        if not self.ALWAYS_LIST and len(res) == 1:
             return res[0]
         return res
 
@@ -78,19 +79,19 @@ class BaseCRUD:
 
     def _get_swaggar_query_parameters(self):
         return '\n'.join([
-            '        - in: query\n' 
-            f'          name: {field.name}\n' 
+            '        - in: query\n'
+            f'          name: {field.name}\n'
             f'          description: {field.help_text} '
-            f'==> Available lookups {[str(a) for a in field.class_lookups]}\n' 
-            f'          required: false\n' 
-            '          schema: \n' 
+            f'==> Available lookups {[str(a) for a in field.class_lookups]}\n'
+            f'          required: false\n'
+            '          schema: \n'
             f'            type: {field.description}'
             for field in self.fields_data])
 
     def swaggar_definition(self):
         rqs = '\n'.join(f'    - {field}' for field in self.required_fields)
         flds = '\n'.join([
-            f'      {field.name}:\n' 
+            f'      {field.name}:\n'
             f'         type: {field.description}'
             # f'         format:{field}\n' \
             # f'         example:{field}\n' \
