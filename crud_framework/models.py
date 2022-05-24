@@ -1,4 +1,16 @@
+from django.conf import settings
 from django.db import models
+from simple_history.models import HistoricalRecords
+
+
+class BaseTypes:
+    @classmethod
+    def get_choices(cls):
+        res = []
+        for k, v in cls.__dict__.items():
+            if k not in ['__module__', '__dict__', '__weakref__', '__doc__']:
+                res.append((v, v))
+        return res
 
 
 class BaseManager(models.Manager):
@@ -12,3 +24,5 @@ class BaseManager(models.Manager):
 
 class BaseModel(models.Model):
     pass
+
+
