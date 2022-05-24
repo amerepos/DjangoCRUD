@@ -26,3 +26,19 @@ class BaseModel(models.Model):
     pass
 
 
+class BaseTrackedModel(BaseModel):
+    created_date = models.DateTimeField(null=False, auto_now_add=True)
+    updated_date = models.DateTimeField(null=False, auto_now=True)
+    is_deleted = models.BooleanField(default=False, null=False, blank=False)
+    editor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='%(class)s_editor_user')
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='%(class)s_creator_user')
+
+    def __init__(self):
+        super(BaseTrackedModel, self).__init__()
+        # todo update editor
+
+
+class BaseHistoryModel(BaseTrackedModel):
+    history = HistoricalRecords(inherit=True, related_name='log')
