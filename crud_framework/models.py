@@ -3,7 +3,7 @@ from django.db import models
 from simple_history.models import HistoricalRecords
 
 
-class BaseTypes:
+class BaseChoices:
     @classmethod
     def get_choices(cls):
         res = []
