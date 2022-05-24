@@ -27,8 +27,8 @@ class BaseModel(models.Model):
 
 
 class BaseTrackedModel(BaseModel):
-    created_date = models.DateTimeField(null=False, auto_now_add=True)
-    updated_date = models.DateTimeField(null=False, auto_now=True)
+    created_at = models.DateTimeField(null=False, auto_now_add=True)
+    updated_at = models.DateTimeField(null=False, auto_now=True)
     is_deleted = models.BooleanField(default=False, null=False, blank=False)
     editor = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='%(class)s_editor_user')
