@@ -3,7 +3,7 @@ from os.path import dirname, join
 from django.conf import settings
 
 
-class BaseCRUD:
+class CrudSchema:
     PATH = ''
     MODEL_CLASS = None
     FIELDS = []
