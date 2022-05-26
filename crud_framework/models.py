@@ -23,22 +23,29 @@ class BaseManager(models.Manager):
 
 
 class BaseModel(models.Model):
-    pass
+    class Meta:
+        abstract = True
 
 
 class BaseTrackedModel(BaseModel):
+    class Meta:
+        abstract = True
+
     created_at = models.DateTimeField(null=False, auto_now_add=True)
     updated_at = models.DateTimeField(null=False, auto_now=True)
-    is_deleted = models.BooleanField(default=False, null=False, blank=False)
-    editor = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='%(class)s_editor_user')
-    creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='%(class)s_creator_user')
+    is_deleted = models.BooleanField(default=False, null=False, blank=True)
+    editor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                               null=True, blank=True, related_name='%(class)s_editor_user')
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                null=True, blank=True, related_name='%(class)s_creator_user')
 
-    def __init__(self):
-        super(BaseTrackedModel, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(BaseTrackedModel, self).__init__(*args, **kwargs)
         # todo update editor
 
 
 class BaseHistoryModel(BaseTrackedModel):
+    class Meta:
+        abstract = True
+
     history = HistoricalRecords(inherit=True, related_name='log')
