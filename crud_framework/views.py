@@ -1,5 +1,6 @@
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from furl import furl
 from django.views.generic import View
@@ -17,8 +18,7 @@ def my_furl(url):
 
 
 def view_catch_error(f):
-    @csrf_exempt
-    def wrap(self, request, *args, **kwargs):
+    def wrap(request, *args, **kwargs):
         try:
             print(request.build_absolute_uri())
             try:
@@ -27,7 +27,7 @@ def view_catch_error(f):
                 filters = {}
             # logged_in_user = get_user(request)  # TODO
 
-            return f(self=self, request=request, filters=filters)
+            return f(request=request, filters=filters)
         except Error as e:
             return JsonResponse(status=e.status, data=dict(e))
 
@@ -36,7 +36,8 @@ def view_catch_error(f):
     return wrap
 
 
-class BaseView(View):
+@method_decorator([csrf_exempt, view_catch_error], name='dispatch')
+class CrudView(View):
     CRUD_CLASS = None
 
     @classmethod
@@ -55,13 +56,11 @@ class BaseView(View):
         else:
             return JsonResponse(status=204, data=[], safe=False)
 
-    @view_catch_error
     def get(self, request, filters):
         crud = self.CRUD_CLASS(filters)
         self.data = crud.get()
         return self._respond()
 
-    @view_catch_error
     def post(self, request, filters):
         print('in post')
         crud = self.CRUD_CLASS(filters)
@@ -69,21 +68,18 @@ class BaseView(View):
         self.data = crud.post(body)
         return self._respond()
 
-    @view_catch_error
     def bulk_post(self, request, filters):
         crud = self.CRUD_CLASS(filters=filters)
         body = unjsonize(request.body.decode())
         self.data = crud.bulk_post(body)
         return self._respond()
 
-    @view_catch_error
     def put(self, request, filters):
         crud = self.CRUD_CLASS(filters)
         body = unjsonize(request.body.decode())
         self.data = crud.put(body)
         return self._respond()
 
-    @view_catch_error
     def delete(self, request, filters):
         crud = self.CRUD_CLASS(filters)
         if not crud.delete():
