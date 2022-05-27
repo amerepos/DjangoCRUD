@@ -8,7 +8,8 @@ class CrudSchema:
     MODEL_CLASS = None
     FIELDS = []
     ANNOTATIONS = {}
-    SUB_CLASSES = {}
+    SUB_CLASSES = {}  # {relation_key, CrudSchema}
+    MANY_MODELS = {}  # {field_name, CrudSchema}
     ALWAYS_LIST = True
 
     def __init__(self, filters):
@@ -18,6 +19,9 @@ class CrudSchema:
         self.set_queryset(filters=filters)
         self.model_name = self.model_class.__name__
         if self.FIELDS:
+            if 'id' not in self.FIELDS:
+                self.FIELDS.append('id')
+            self.FIELDS += list(self.SUB_CLASSES.keys())
             self.fields_data = [f for f in self.model_class._meta.fields if f.name in self.FIELDS]
         else:
             self.fields_data = self.model_class._meta.fields
@@ -30,20 +34,38 @@ class CrudSchema:
 
     def get(self):
         res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS))
-        for relation_key, model_class in self.SUB_CLASSES.items():
-            for item in res:
-                if model_class.__name__ not in item:
-                    item[model_class.__name__] = []
-                item[model_class.__name__] = list(model_class.filter(id=item[relation_key]).values())
+        for item in res:
+            for relation_key, crud_schema in self.SUB_CLASSES.items():  # TODO dont call items everytime
+                model_class = crud_schema.model_class
+                model_name = model_class.__name__.lower()
+                relation_id = item.get(relation_key)
+                if not relation_id:
+                    item[model_name] = None
+                else:
+                    i = crud_schema(filters={'id': relation_id}).get()
+                    item[model_name] = i[0] if isinstance(i, list) else i
+            for field_name, crud_schema in self.MANY_MODELS.items():
+                item[field_name] = \
+                    crud_schema(filters={f'{self.model_name.lower()}__id': item['id']}).get()
 
         if not self.ALWAYS_LIST and len(res) == 1:
             return res[0]
         return res
 
     def post(self, data):
+        many_models_data = []
+        for field in self.MANY_MODELS.keys():
+            if field in data:
+                many_models_data.append((field, data.pop(field)))
+
         item = self.model_class(**data)
         item.full_clean()
         item.save()
+
+        for field, ids in many_models_data:
+            ids = ','.join(str(i) for i in ids)
+            exec(f'item.{field}.add({ids})')
+
         self.set_queryset(filters={'id': item.id})
         return self.get()
 
