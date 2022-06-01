@@ -22,6 +22,8 @@ class BaseManager(models.Manager):
         return self.getter_model.objects.get_queryset()
 
 
+# TODO handle errors
+# TODO Soft delete model
 class BaseModel(models.Model):
     class Meta:
         abstract = True

@@ -52,7 +52,7 @@ class CrudSchema:
             return res[0]
         return res
 
-    def post(self, data):
+    def post(self, **data):
         many_models_data = []
         for field in self.MANY_MODELS.keys():
             if field in data:
@@ -69,7 +69,7 @@ class CrudSchema:
         self.set_queryset(filters={'id': item.id})
         return self.get()
 
-    def bulk_post(self, data, force=False):
+    def bulk_post(self, force=False, **data):
         if not force:
             res = []
             ids = []
@@ -87,7 +87,7 @@ class CrudSchema:
         self.set_queryset(filters={'id__in': ids})
         return self.get()
 
-    def put(self, data):
+    def put(self, **data):
         for item in self.queryset:
             for key, value in data.items():
                 setattr(item, key, value)

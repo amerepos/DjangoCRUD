@@ -65,23 +65,23 @@ class CrudView(View):
         self.data = crud.get()
         return self._respond()
 
-    def post(self, request, filters):
+    def post(self, request, filters, **kwargs):
         print('in post')
         crud = self.CRUD_CLASS(filters)
         body = unjsonize(request.body.decode())
-        self.data = crud.post(body)
+        self.data = crud.post(**body, **kwargs)
         return self._respond()
 
-    def bulk_post(self, request, filters):
+    def bulk_post(self, request, filters, **kwargs):
         crud = self.CRUD_CLASS(filters=filters)
         body = unjsonize(request.body.decode())
-        self.data = crud.bulk_post(body)
+        self.data = crud.bulk_post(**body, **kwargs)
         return self._respond()
 
-    def put(self, request, filters):
+    def put(self, request, filters, **kwargs):
         crud = self.CRUD_CLASS(filters)
         body = unjsonize(request.body.decode())
-        self.data = crud.put(body)
+        self.data = crud.put(**body, **kwargs)
         return self._respond()
 
     def delete(self, request, filters):
