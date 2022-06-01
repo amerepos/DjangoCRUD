@@ -58,7 +58,7 @@ class CrudView(View):
         if self.data:
             return JsonResponse(status=201, data=self.data, safe=False)
         else:
-            return JsonResponse(status=204, data=[], safe=False)
+            return HttpResponse(status=204)
 
     def get(self, request, filters):
         crud = self.CRUD_CLASS(filters)
