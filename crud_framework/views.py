@@ -40,6 +40,10 @@ def view_catch_error(f):
 class CrudView(View):
     CRUD_CLASS = None
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data = None
+
     @classmethod
     def get_path(cls):
         return cls.CRUD_CLASS.PATH
