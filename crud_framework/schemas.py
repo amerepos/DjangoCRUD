@@ -11,13 +11,22 @@ class CrudSchema:
     SUB_CLASSES = {}  # {relation_key, CrudSchema}
     MANY_MODELS = {}  # {field_name, CrudSchema}
     ALWAYS_LIST = True
+    SORT_BY = []
 
     def __init__(self, filters):
         # self.url_path = self.URL_PATH
         self.path = self.PATH
         self.model_class = self.MODEL_CLASS
-        self.set_queryset(filters=filters)
         self.model_name = self.model_class.__name__
+
+        if 'sort_by' in filters:
+            srt = filters.pop('sort_by', [])
+            if isinstance(srt, list):
+                self.SORT_BY += srt
+            else:
+                self.SORT_BY.append(srt)
+        self.set_queryset(filters=filters)
+
         if self.FIELDS:
             if 'id' not in self.FIELDS:
                 self.FIELDS.append('id')
@@ -30,7 +39,7 @@ class CrudSchema:
 
     def set_queryset(self, filters):
         self.filters = filters if filters else {}
-        self.queryset = self.model_class.objects.filter(**filters)
+        self.queryset = self.model_class.objects.filter(**filters).order_by(*self.SORT_BY)
 
     def get(self):
         res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS))
