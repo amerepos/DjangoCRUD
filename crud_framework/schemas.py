@@ -102,6 +102,7 @@ class CrudSchema:
             for key, value in data.items():
                 setattr(item, key, value)
             item.full_clean()
+            res.append(item)
         for item in res:
             item.save()
         return self.get()
