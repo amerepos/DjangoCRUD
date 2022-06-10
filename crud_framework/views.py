@@ -73,9 +73,9 @@ class CrudView(View):
         return self._respond()
 
     def bulk_post(self, request, filters, **kwargs):
-        crud = self.CRUD_CLASS(filters=filters)
+        crud = self.CRUD_CLASS(filters)
         body = unjsonize(request.body.decode())
-        self.data = crud.bulk_post(**body, **kwargs)
+        self.data = crud.bulk_post(data=body, **filters, **kwargs)
         return self._respond()
 
     def put(self, request, filters, **kwargs):
