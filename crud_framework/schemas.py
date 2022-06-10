@@ -78,30 +78,32 @@ class CrudSchema:
         self.set_queryset(filters={'id': item.id})
         return self.get()
 
-    def bulk_post(self, force=False, **data):
+    def bulk_post(self, data, force=False, **kwargs):
         if not force:
             res = []
             ids = []
             for item in data:
-                item = self.model_class(**item)
+                item = self.model_class(**item, **kwargs)
                 item.full_clean()
                 res.append(item)
             for item in res:
                 item.save()
                 ids.append(item.id)
         else:
-            self.model_class.objects.bulk_create([self.model_class(**item) for item in data])
+            self.model_class.objects.bulk_create([self.model_class(**item, **kwargs) for item in data])
             ln = len(data)
             ids = list(self.model_class.objects.order_by('-id')[:ln].values_list('id', flat=True))
         self.set_queryset(filters={'id__in': ids})
         return self.get()
 
     def put(self, **data):
+        res = []
         for item in self.queryset:
             for key, value in data.items():
                 setattr(item, key, value)
             item.full_clean()
-        self.queryset.update(**data)
+        for item in res:
+            item.save()
         return self.get()
 
     def delete(self):
