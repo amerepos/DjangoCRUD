@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from furl import furl
 from django.views.generic import View
 from json import loads as unjsonize
-from .errors import Error
+from crud_framework.errors import Error
 
 
 def my_furl(url):
@@ -20,14 +20,12 @@ def my_furl(url):
 def view_catch_error(f):
     def wrap(request, *args, **kwargs):
         try:
-            print(request.build_absolute_uri())
             try:
                 filters = my_furl(request.build_absolute_uri())
             except:
                 filters = {}
-            # logged_in_user = get_user(request)  # TODO
 
-            return f(request=request, filters=filters)
+            return f(request=request, filters=filters, *args, **kwargs)
         except Error as e:
             return JsonResponse(status=e.status, data=dict(e))
 
