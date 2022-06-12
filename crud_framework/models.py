@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from simple_history.models import HistoricalRecords
 
 
 class BaseChoices:
@@ -44,10 +43,3 @@ class BaseTrackedModel(BaseModel):
     def __init__(self, *args, **kwargs):
         super(BaseTrackedModel, self).__init__(*args, **kwargs)
         # todo update editor
-
-
-class BaseHistoryModel(BaseTrackedModel):
-    class Meta:
-        abstract = True
-
-    history = HistoricalRecords(inherit=True, related_name='log')
