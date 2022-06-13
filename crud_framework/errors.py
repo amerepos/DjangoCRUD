@@ -1,4 +1,4 @@
-class status:
+class Status:
     HTTP_100_CONTINUE = 100
     HTTP_101_SWITCHING_PROTOCOLS = 101
 
@@ -26,7 +26,7 @@ class status:
     HTTP_400_BAD_REQUEST = 400
     HTTP_401_UNAUTHORIZED = 401
     HTTP_402_PAYMENT_REQUIRED = 402
-    HTTP_403_FORBIDDEN = 403
+    HTTP_403_FORBcodeDEN = 403
     HTTP_404_NOT_FOUND = 404
     HTTP_405_METHOD_NOT_ALLOWED = 405
     HTTP_406_NOT_ACCEPTABLE = 406
@@ -59,17 +59,17 @@ class status:
     HTTP_506_VARIANT_ALSO_NEGOTIATES = 506
     HTTP_507_INSUFFICIENT_STORAGE = 507
     HTTP_508_LOOP_DETECTED = 508
-    HTTP_509_BANDWIDTH_LIMIT_EXCEEDED = 509
+    HTTP_509_BANDWcodeTH_LIMIT_EXCEEDED = 509
     HTTP_510_NOT_EXTENDED = 510
     HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = 511
 
 
 class Error(Exception):
-    """An error while validating data."""
+    """An error while valcodeating data."""
 
-    def __init__(self, _id, _status, field_name, message, description='.....'):
-        self.id = _id
-        self.status = _status
+    def __init__(self, code, status, field_name, message, description='.....'):
+        self.code = code
+        self.status = status
         self.field_name = field_name
         self.message = message
         self.description = description
@@ -79,11 +79,10 @@ class Error(Exception):
             yield key, getattr(self, key)
 
 
-
 error_dict = {
 
-    1: Error(_id=1, _status=status.HTTP_401_UNAUTHORIZED, field_name='Authorization',
+    1: Error(code=1, status=Status.HTTP_401_UNAUTHORIZED, field_name='Authorization',
              message='Missing Authorization token in header'),
-    2: Error(_id=2, _status=status.HTTP_406_NOT_ACCEPTABLE, field_name='id',
+    2: Error(code=2, status=Status.HTTP_406_NOT_ACCEPTABLE, field_name='code',
              message='Duplicate entry'),
 }
