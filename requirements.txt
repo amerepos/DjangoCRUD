@@ -1,3 +1,2 @@
-setuptools==59.6.0
-Django==3.2.13
+Django>=3.2.13
 furl==2.1.3
