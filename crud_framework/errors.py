@@ -81,8 +81,8 @@ class Error(Exception):
 
 error_dict = {
 
-    1: Error(code=1, status=Status.HTTP_401_UNAUTHORIZED, field_name='Authorization',
+    1: Error(code=1, status=HttpStatus.HTTP_401_UNAUTHORIZED, field_name='Authorization',
              message='Missing Authorization token in header'),
-    2: Error(code=2, status=Status.HTTP_406_NOT_ACCEPTABLE, field_name='code',
+    2: Error(code=2, status=HttpStatus.HTTP_406_NOT_ACCEPTABLE, field_name='code',
              message='Duplicate entry'),
 }
