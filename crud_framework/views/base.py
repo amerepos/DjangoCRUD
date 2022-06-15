@@ -34,9 +34,8 @@ def view_catch_error(f):
     return wrap
 
 
-@method_decorator([csrf_exempt, view_catch_error], name='dispatch')
-class CrudView(View):
-    CRUD_CLASS = None
+class BaseView(View):
+    CRUD_SCHEMA = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -44,11 +43,11 @@ class CrudView(View):
 
     @classmethod
     def get_path(cls):
-        return cls.CRUD_CLASS.PATH
+        return cls.CRUD_SCHEMA.PATH
 
     @classmethod
     def get_route_kwargs(cls):
-        return dict(route=cls.get_path(), view=cls.as_view(), name=cls.CRUD_CLASS.__name__)
+        return dict(route=cls.get_path(), view=cls.as_view(), name=cls.CRUD_SCHEMA.__name__)
 
     # TODO filters for class not per function
     # TODO handle foreign key
@@ -59,36 +58,54 @@ class CrudView(View):
             return HttpResponse(status=204)
 
     def get(self, request, filters):
-        crud = self.CRUD_CLASS(filters)
+        raise NotImplemented('GET not Allowed!')
+
+    def post(self, request, filters, **kwargs):
+        raise NotImplemented('POST not Allowed!')
+
+    def put(self, request, filters, **kwargs):
+        raise NotImplemented('PUT not Allowed!')
+
+    def delete(self, request, filters):
+        raise NotImplemented('DELETE not Allowed!')
+
+
+class BaseCrudView(BaseView):
+
+    def get(self, request, filters):
+        crud = self.CRUD_SCHEMA(filters)
         self.data = crud.get()
         return self._respond()
 
     def post(self, request, filters, **kwargs):
         print('in post')
-        crud = self.CRUD_CLASS(filters)
+        crud = self.CRUD_SCHEMA(filters)
         body = unjsonize(request.body.decode())
         self.data = crud.post(**body, **kwargs)
         return self._respond()
 
     def bulk_post(self, request, filters, **kwargs):
-        crud = self.CRUD_CLASS(filters)
+        crud = self.CRUD_SCHEMA(filters)
         body = unjsonize(request.body.decode())
         self.data = crud.bulk_post(data=body, **filters, **kwargs)
         return self._respond()
 
     def put(self, request, filters, **kwargs):
-        crud = self.CRUD_CLASS(filters)
+        crud = self.CRUD_SCHEMA(filters)
         body = unjsonize(request.body.decode())
         self.data = crud.put(**body, **kwargs)
         return self._respond()
 
     def delete(self, request, filters):
-        crud = self.CRUD_CLASS(filters)
+        crud = self.CRUD_SCHEMA(filters)
         if not crud.delete():
             return HttpResponse(status=404)
         return self._respond()
 
     @classmethod
     def get_doc(cls, request):
-        crud = cls.CRUD_CLASS({})
+        crud = cls.CRUD_SCHEMA({})
         return render(request, crud.template_path)
+
+
+

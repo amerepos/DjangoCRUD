@@ -1,1 +1,2 @@
-from .base_views import *
+from .modular import CrudView
+from .functional import FunctionalView

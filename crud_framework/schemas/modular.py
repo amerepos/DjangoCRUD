@@ -2,9 +2,10 @@ import os
 from os.path import dirname, join
 from django.conf import settings
 
+from crud_framework.schemas.base import BaseSchema
 
-class CrudSchema:
-    PATH = ''
+
+class CrudSchema(BaseSchema):
     MODEL_CLASS = None
     FIELDS = []
     ANNOTATIONS = {}
