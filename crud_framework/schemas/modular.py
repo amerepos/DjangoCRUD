@@ -55,8 +55,10 @@ class CrudSchema(BaseSchema):
                     i = crud_schema(filters={'id': relation_id}).get()
                     item[model_name] = i[0] if isinstance(i, list) else i
             for field_name, crud_schema in self.MANY_MODELS.items():
-                item[field_name] = \
-                    crud_schema(filters={f'{self.model_name.lower()}__id': item['id']}).get()
+                join_key = f'{self.model_name.lower()}__id'
+                if '__' in field_name:
+                    join_key = '__'.join(field_name.split('__')[:-1]) + f'__{join_key}'
+                item[field_name] = crud_schema(filters={join_key: item['id']}).get()
 
         if not self.ALWAYS_LIST and len(res) == 1:
             return res[0]
