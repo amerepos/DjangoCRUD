@@ -35,19 +35,20 @@ def view_catch_error(f):
 
 
 class BaseView(View):
-    CRUD_SCHEMA = None
+    SCHEMA_CLASS = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = None
+        self.schema_class = self.SCHEMA_CLASS
 
     @classmethod
     def get_path(cls):
-        return cls.CRUD_SCHEMA.PATH
+        return cls.SCHEMA_CLASS.PATH
 
     @classmethod
     def get_route_kwargs(cls):
-        return dict(route=cls.get_path(), view=cls.as_view(), name=cls.CRUD_SCHEMA.__name__)
+        return dict(route=cls.get_path(), view=cls.as_view(), name=cls.SCHEMA_CLASS.__name__)
 
     # TODO filters for class not per function
     # TODO handle foreign key
@@ -73,39 +74,36 @@ class BaseView(View):
 class BaseCrudView(BaseView):
 
     def get(self, request, filters):
-        crud = self.CRUD_SCHEMA(filters)
+        crud = self.schema_class(filters)
         self.data = crud.get()
         return self._respond()
 
     def post(self, request, filters, **kwargs):
         print('in post')
-        crud = self.CRUD_SCHEMA(filters)
+        crud = self.schema_class(filters)
         body = unjsonize(request.body.decode())
         self.data = crud.post(**body, **kwargs)
         return self._respond()
 
     def bulk_post(self, request, filters, **kwargs):
-        crud = self.CRUD_SCHEMA(filters)
+        crud = self.schema_class(filters)
         body = unjsonize(request.body.decode())
         self.data = crud.bulk_post(data=body, **filters, **kwargs)
         return self._respond()
 
     def put(self, request, filters, **kwargs):
-        crud = self.CRUD_SCHEMA(filters)
+        crud = self.schema_class(filters)
         body = unjsonize(request.body.decode())
         self.data = crud.put(**body, **kwargs)
         return self._respond()
 
     def delete(self, request, filters):
-        crud = self.CRUD_SCHEMA(filters)
+        crud = self.schema_class(filters)
         if not crud.delete():
             return HttpResponse(status=404)
         return self._respond()
 
     @classmethod
     def get_doc(cls, request):
-        crud = cls.CRUD_SCHEMA({})
+        crud = cls.SCHEMA_CLASS({})
         return render(request, crud.template_path)
-
-
-
