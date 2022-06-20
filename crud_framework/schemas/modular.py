@@ -11,6 +11,7 @@ class CrudSchema(BaseSchema):
     ANNOTATIONS = {}
     SUB_CLASSES = {}  # {relation_key, CrudSchema}
     MANY_MODELS = {}  # {field_name, CrudSchema}
+    ANCHOR='id'
     ALWAYS_LIST = True
     ORDER_BY = []
 
@@ -29,8 +30,8 @@ class CrudSchema(BaseSchema):
         self.set_queryset(filters=filters)
 
         if self.FIELDS:
-            if 'id' not in self.FIELDS:
-                self.FIELDS.append('id')
+            if self.ANCHOR not in self.FIELDS:
+                self.FIELDS.append(self.ANCHOR)
             self.FIELDS += list(self.SUB_CLASSES.keys())
             self.fields_data = [f for f in self.model_class._meta.fields if f.name in self.FIELDS]
         else:
@@ -43,7 +44,7 @@ class CrudSchema(BaseSchema):
         self.queryset = self.model_class.objects.filter(**filters).order_by(*self.ORDER_BY)
 
     def get(self):
-        res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS))
+        res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS).distinct())
         for item in res:
             for relation_key, crud_schema in self.SUB_CLASSES.items():  # TODO dont call items everytime
                 model_class = crud_schema.model_class
@@ -55,10 +56,10 @@ class CrudSchema(BaseSchema):
                     i = crud_schema(filters={'id': relation_id}).get()
                     item[model_name] = i[0] if isinstance(i, list) else i
             for field_name, crud_schema in self.MANY_MODELS.items():
-                join_key = f'{self.model_name.lower()}__id'
+                join_key = f'{self.model_name.lower()}__{self.ANCHOR}'
                 if '__' in field_name:
                     join_key = '__'.join(field_name.split('__')[:-1]) + f'__{join_key}'
-                item[field_name] = crud_schema(filters={join_key: item['id']}).get()
+                item[field_name] = crud_schema(filters={join_key: item[self.ANCHOR]}).get()
 
         if not self.ALWAYS_LIST and len(res) == 1:
             return res[0]
