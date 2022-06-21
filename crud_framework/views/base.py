@@ -28,6 +28,10 @@ def view_catch_error(f):
             return f(request=request, filters=filters, *args, **kwargs)
         except Error as e:
             return JsonResponse(status=e.status, data=dict(e))
+        except Exception as e:
+            data = dict(e)
+            data['error_message']=str(e)
+            return JsonResponse(status=301, data=data)
 
     wrap.__doc__ = f.__doc__
     wrap.__name__ = f.__name__
