@@ -1,7 +1,6 @@
 import os
 from os.path import dirname, join
 from django.conf import settings
-from django.core.paginator import Paginator
 from crud_framework.schemas.base import BaseSchema
 
 
@@ -16,7 +15,7 @@ class CrudSchema(BaseSchema):
     ORDER_BY = []
     EXPAND = True
     TRIM_NULL_VALUES = False  # TODO
-    PAGE_SIZE = None
+    PAGE_SIZE = 0
 
     def __init__(self, filters):
         # self.url_path = self.URL_PATH
@@ -53,7 +52,7 @@ class CrudSchema(BaseSchema):
 
     def get(self):
         res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS).distinct())
-        if self.page_size:
+        if self.page_size > 0:
             i = (self.page_number - 1) * self.page_size
             res = res[i:i + self.page_size]
         for item in res:
