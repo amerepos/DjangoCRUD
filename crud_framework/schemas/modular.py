@@ -1,7 +1,7 @@
 import os
 from os.path import dirname, join
 from django.conf import settings
-
+from django.core.paginator import Paginator
 from crud_framework.schemas.base import BaseSchema
 
 
@@ -11,15 +11,23 @@ class CrudSchema(BaseSchema):
     ANNOTATIONS = {}
     SUB_CLASSES = {}  # {relation_key, CrudSchema}
     MANY_MODELS = {}  # {field_name, CrudSchema}
-    ANCHOR='id'
+    ANCHOR = 'id'
     ALWAYS_LIST = True
     ORDER_BY = []
+    EXPAND = True
+    TRIM_NULL_VALUES = False  # TODO
+    PAGE_SIZE = None
 
     def __init__(self, filters):
         # self.url_path = self.URL_PATH
         self.path = self.PATH
         self.model_class = self.MODEL_CLASS
         self.model_name = self.model_class.__name__
+
+        # Pop page number or 1
+        self.page_number = filters.pop('page_number', 1)
+        # Pop page size ELSE use default
+        self.page_size = filters.pop('page_size', self.PAGE_SIZE)
 
         if 'order_by' in filters:
             srt = filters.pop('order_by', [])
@@ -42,6 +50,8 @@ class CrudSchema(BaseSchema):
     def set_queryset(self, filters):
         self.filters = filters if filters else {}
         self.queryset = self.model_class.objects.filter(**filters).order_by(*self.ORDER_BY)
+        if self.page_size:
+            self.queryset = Paginator(self.queryset, self.page_size)
 
     def get(self):
         res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS).distinct())
@@ -60,6 +70,8 @@ class CrudSchema(BaseSchema):
                 if '__' in field_name:
                     join_key = '__'.join(field_name.split('__')[:-1]) + f'__{join_key}'
                 item[field_name] = crud_schema(filters={join_key: item[self.ANCHOR]}).get()
+            if self.TRIM_NULL_VALUES:
+                res = {k: v for k, v in item.values() if v}
 
         if not self.ALWAYS_LIST and len(res) == 1:
             return res[0]
