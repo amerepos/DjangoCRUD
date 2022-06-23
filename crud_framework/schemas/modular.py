@@ -25,9 +25,9 @@ class CrudSchema(BaseSchema):
         self.model_name = self.model_class.__name__
 
         # Pop page number or 1
-        self.page_number = filters.pop('page_number', 1)
+        self.page_number = int(filters.pop('page_number', 1))
         # Pop page size ELSE use default
-        self.page_size = filters.pop('page_size', self.PAGE_SIZE)
+        self.page_size = int(filters.pop('page_size', self.PAGE_SIZE))
 
         if 'order_by' in filters:
             srt = filters.pop('order_by', [])
@@ -50,11 +50,12 @@ class CrudSchema(BaseSchema):
     def set_queryset(self, filters):
         self.filters = filters if filters else {}
         self.queryset = self.model_class.objects.filter(**filters).order_by(*self.ORDER_BY)
-        if self.page_size:
-            self.queryset = Paginator(self.queryset, self.page_size)
 
     def get(self):
         res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS).distinct())
+        if self.page_size:
+            i = (self.page_number - 1) * self.page_size
+            res = res[i:i + self.page_size]
         for item in res:
             for relation_key, crud_schema in self.SUB_CLASSES.items():  # TODO dont call items everytime
                 model_class = crud_schema.model_class
@@ -70,8 +71,8 @@ class CrudSchema(BaseSchema):
                 if '__' in field_name:
                     join_key = '__'.join(field_name.split('__')[:-1]) + f'__{join_key}'
                 item[field_name] = crud_schema(filters={join_key: item[self.ANCHOR]}).get()
-            if self.TRIM_NULL_VALUES:
-                res = {k: v for k, v in item.values() if v}
+            # if self.TRIM_NULL_VALUES: #TODO
+            #     item = {k: v for k, v in item.values() if v}
 
         if not self.ALWAYS_LIST and len(res) == 1:
             return res[0]
