@@ -34,6 +34,10 @@ class CrudSchema(BaseSchema):
                 self.ORDER_BY += srt
             else:
                 self.ORDER_BY.append(srt)
+        elif not self.ORDER_BY:
+            # Order by Anchor if no ordering sent
+            self.ORDER_BY = [self.ANCHOR]
+
         self.set_queryset(filters=filters)
 
         if self.FIELDS:
