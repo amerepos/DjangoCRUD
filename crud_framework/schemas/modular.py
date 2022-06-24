@@ -56,6 +56,7 @@ class CrudSchema(BaseSchema):
 
     def get(self):
         res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS).distinct())
+        total_count = len(res)
         if self.page_size > 0:
             i = (self.page_number - 1) * self.page_size
             res = res[i:i + self.page_size]
@@ -79,7 +80,10 @@ class CrudSchema(BaseSchema):
 
         if not self.ALWAYS_LIST and len(res) == 1:
             return res[0]
-        return res
+        return {
+            'data': res,
+            'total_count': total_count,
+        }
 
     def post(self, **data):
         many_models_data = []
