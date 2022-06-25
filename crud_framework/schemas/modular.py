@@ -131,8 +131,13 @@ class CrudSchema(BaseSchema):
             item.save()
         return self.get()
 
-    def delete(self):
-        self.queryset.delete()
+    def delete(self, **data):
+        if data:  # Update date like editor before delete
+            for item in self.queryset:
+                for k, v in data.items():
+                    setattr(item, k, v)
+                item.save()
+                item.delete()
         return True
 
     def _get_swaggar_query_parameters(self):

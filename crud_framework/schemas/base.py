@@ -1,7 +1,6 @@
 class BaseSchema:
     PATH = ''
 
-
     def get(self):
         raise NotImplemented('GET not Implemented!')
 
