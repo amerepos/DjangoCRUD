@@ -34,7 +34,6 @@ class BaseTrackedModel(BaseModel):
 
     created_at = models.DateTimeField(null=False, auto_now_add=True)
     updated_at = models.DateTimeField(null=False, auto_now=True)
-    is_deleted = models.BooleanField(default=False, null=False, blank=True)
     editor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
                                null=True, blank=True, related_name='%(class)s_editor_user')
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
@@ -43,3 +42,7 @@ class BaseTrackedModel(BaseModel):
     def __init__(self, *args, **kwargs):
         super(BaseTrackedModel, self).__init__(*args, **kwargs)
         # todo update editor
+
+    @classmethod
+    def get_user_field(cls):
+        raise NotImplemented('Refer user_field to filter')

@@ -1,5 +1,4 @@
 from crud_framework.errors import Error, HttpStatus
-from crud_framework.models import BaseTrackedModel
 from crud_framework.schemas import CrudSchema
 
 

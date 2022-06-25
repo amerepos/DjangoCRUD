@@ -30,7 +30,7 @@ def view_catch_error(f):
             return JsonResponse(status=e.status, data=dict(e))
         except Exception as e:
             data = dict(e)
-            data['error_message']=str(e)
+            data['error_message'] = str(e)
             return JsonResponse(status=301, data=data)
 
     wrap.__doc__ = f.__doc__
@@ -71,38 +71,38 @@ class BaseView(View):
     def put(self, request, filters, **kwargs):
         raise NotImplemented('PUT not Allowed!')
 
-    def delete(self, request, filters):
+    def delete(self, request, filters, **kwargs):
         raise NotImplemented('DELETE not Allowed!')
 
 
 class BaseCrudView(BaseView):
 
-    def get(self, request, filters):
-        crud = self.schema_class(filters)
+    def get(self, request, filters, **kwargs):
+        crud = self.schema_class(filters=filters, **kwargs.pop('initkwargs', {}))
         self.data = crud.get()
         return self._respond()
 
     def post(self, request, filters, **kwargs):
         print('in post')
-        crud = self.schema_class(filters)
+        crud = self.schema_class(filters=filters, **kwargs.pop('initkwargs', {}))
         body = unjsonize(request.body.decode())
         self.data = crud.post(**body, **kwargs)
         return self._respond()
 
     def bulk_post(self, request, filters, **kwargs):
-        crud = self.schema_class(filters)
+        crud = self.schema_class(filters=filters, **kwargs.pop('initkwargs', {}))
         body = unjsonize(request.body.decode())
         self.data = crud.bulk_post(data=body, **filters, **kwargs)
         return self._respond()
 
     def put(self, request, filters, **kwargs):
-        crud = self.schema_class(filters)
+        crud = self.schema_class(filters=filters, **kwargs.pop('initkwargs', {}))
         body = unjsonize(request.body.decode())
         self.data = crud.put(**body, **kwargs)
         return self._respond()
 
-    def delete(self, request, filters):
-        crud = self.schema_class(filters)
+    def delete(self, request, filters, **kwargs):
+        crud = self.schema_class(filters=filters, **kwargs.pop('initkwargs', {}))
         if not crud.delete():
             return HttpResponse(status=404)
         return self._respond()
