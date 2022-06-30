@@ -7,6 +7,7 @@ from crud_framework.schemas.base import BaseSchema
 class CrudSchema(BaseSchema):
     MODEL_CLASS = None
     FIELDS = []
+    MAPPED_FILTERS = {}
     ANNOTATIONS = {}
     SUB_CLASSES = {}  # {relation_key, CrudSchema}
     MANY_MODELS = {}  # {field_name, CrudSchema}
@@ -17,13 +18,17 @@ class CrudSchema(BaseSchema):
     TRIM_NULL_VALUES = False  # TODO
     PAGE_SIZE = 0
 
-    def __init__(self, filters):
+    def __init__(self, filters, initkwargs=None):
         # self.url_path = self.URL_PATH
         self.path = self.PATH
         self.model_class = self.MODEL_CLASS
         self.model_name = self.model_class.__name__
+        self.initkwargs = initkwargs if initkwargs else {}
 
-        # Pop page number or 1
+        for k, v in self.MAPPED_FILTERS.items():
+            filters[k] = filters.pop(v)
+
+            # Pop page number or 1
         self.page_number = int(filters.pop('page_number', 1))
         # Pop page size ELSE use default
         self.page_size = int(filters.pop('page_size', self.PAGE_SIZE))
@@ -74,7 +79,7 @@ class CrudSchema(BaseSchema):
                 join_key = f'{self.model_name.lower()}__{self.ANCHOR}'
                 if '__' in field_name:
                     join_key = '__'.join(field_name.split('__')[:-1]) + f'__{join_key}'
-                item[field_name] = crud_schema(filters={join_key: item[self.ANCHOR]}).get()
+                item[field_name] = crud_schema(initkwargs=self.initkwargs, filters={join_key: item[self.ANCHOR]}).get()
             # if self.TRIM_NULL_VALUES: #TODO
             #     item = {k: v for k, v in item.values() if v}
 
