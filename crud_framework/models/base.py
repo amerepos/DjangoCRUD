@@ -41,7 +41,8 @@ class BaseTrackedModel(BaseModel):
 
     def __init__(self, *args, **kwargs):
         super(BaseTrackedModel, self).__init__(*args, **kwargs)
-        # todo update editor
+        if self.editor and not self.creator:
+            self.creator = self.editor
 
     @classmethod
     def get_user_field(cls):
