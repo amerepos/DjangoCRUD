@@ -67,12 +67,12 @@ class HttpStatus:
 class Error(Exception):
     """An error while valcodeating data."""
 
-    def __init__(self, code, status, field_name, message, description='.....'):
+    def __init__(self, field_name, message, code=-1, status=HttpStatus.HTTP_406_NOT_ACCEPTABLE, description=None):
         self.code = code
         self.status = status
         self.field_name = field_name
         self.message = message
-        self.description = description
+        self.description = description if description else message
 
     def __iter__(self):
         for key in self.__dict__:
