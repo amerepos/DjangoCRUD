@@ -24,7 +24,7 @@ def view_catch_error(f):
             except:
                 filters = {}
 
-            return f(request=request, filters=filters, *args, **kwargs)
+            return f(filters=filters, *args, **kwargs)
         except Error as e:
             return JsonResponse(status=e.status, data=dict(e))
         except Exception as e:
@@ -61,22 +61,22 @@ class BaseView(View):
         else:
             return HttpResponse(status=204)
 
-    def get(self, request, filters):
+    def get(self, filters):
         raise NotImplemented('GET not Allowed!')
 
-    def post(self, request, filters, **kwargs):
+    def post(self, body, filters, **kwargs):
         raise NotImplemented('POST not Allowed!')
 
-    def put(self, request, filters, **kwargs):
+    def put(self, body, filters, **kwargs):
         raise NotImplemented('PUT not Allowed!')
 
-    def delete(self, request, filters, **kwargs):
+    def delete(self, filters, **kwargs):
         raise NotImplemented('DELETE not Allowed!')
 
 
 class BaseCrudView(BaseView):
 
-    def get(self, request, filters, **kwargs):
+    def get(self, filters, **kwargs):
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
         self.data = crud.get()
         return self._respond()
@@ -113,7 +113,7 @@ class BaseCrudView(BaseView):
         self.data = crud.put(**body, **kwargs)
         return self._respond()
 
-    def delete(self, request, filters, **kwargs):
+    def delete(self, filters, **kwargs):
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
         if not crud.delete():
             return HttpResponse(status=404)
@@ -122,4 +122,4 @@ class BaseCrudView(BaseView):
     @classmethod
     def get_doc(cls, request):
         crud = cls.SCHEMA_CLASS({})
-        return render(request, crud.template_path)
+        return render(crud.template_path)
