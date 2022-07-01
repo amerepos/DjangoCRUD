@@ -4,7 +4,6 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from furl import furl
 from django.views.generic import View
-from json import loads as unjsonize
 from crud_framework.errors import Error
 
 
@@ -82,22 +81,35 @@ class BaseCrudView(BaseView):
         self.data = crud.get()
         return self._respond()
 
-    def post(self, request, filters, **kwargs):
+    def post(self, body, filters, **kwargs):
         print('in post')
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
-        body = unjsonize(request.body.decode())
+
+        for k, v in kwargs.pop('files', {}).items():
+            # print(v.__dict__) todo change content from b''
+            # with open('tmp') as t:
+            #     t.write(v['file'].read())
+            #     print(t.__dict__)
+            body[k] = v
+
         self.data = crud.post(**body, **kwargs)
         return self._respond()
 
-    def bulk_post(self, request, filters, **kwargs):
+    def bulk_post(self, body, filters, **kwargs):
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
-        body = unjsonize(request.body.decode())
+
+        for k, v in kwargs.pop('files', {}).items():
+            body[k] = v
+
         self.data = crud.bulk_post(data=body, **filters, **kwargs)
         return self._respond()
 
-    def put(self, request, filters, **kwargs):
+    def put(self, body, filters, **kwargs):
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
-        body = unjsonize(request.body.decode())
+
+        for k, v in kwargs.pop('files', {}).items():
+            body[k] = v
+
         self.data = crud.put(**body, **kwargs)
         return self._respond()
 
