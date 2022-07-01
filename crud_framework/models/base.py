@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from crud_framework.errors import Error
+
 
 class BaseChoices:
     @classmethod
@@ -10,6 +12,13 @@ class BaseChoices:
             if k not in ['__module__', '__dict__', '__weakref__', '__doc__']:
                 res.append((v, v))
         return res
+
+    @classmethod
+    def is_choice_or_err(cls, value):
+        for _, v in cls.get_choices():
+            if value == v:
+                return True
+        raise Error(field_name=cls.__name__, message=f'({value}) is not a choice')
 
 
 class BaseManager(models.Manager):
