@@ -6,6 +6,7 @@ from furl import furl
 from django.views.generic import View
 from json import loads as unjsonize
 from crud_framework.errors import Error
+from django.conf import settings
 
 
 def my_furl(url):
@@ -19,6 +20,8 @@ def my_furl(url):
 
 def view_catch_error(f):
     def wrap(request, *args, **kwargs):
+        if hasattr(settings, 'logger'):
+            settings.logger.info(f'REQUEST: {request.method} || URL: {request.build_absolute_uri()}')
         try:
             try:
                 filters = my_furl(request.build_absolute_uri())
@@ -63,15 +66,23 @@ class BaseView(View):
             return HttpResponse(status=204)
 
     def get(self, request, filters):
+        if hasattr(settings, 'logger'):
+            settings.logger.debug(f'GET || Filters: {str(filters)}')
         raise NotImplemented('GET not Allowed!')
 
     def post(self, request, body, filters, **kwargs):
+        if hasattr(settings, 'logger'):
+            settings.logger.debug(f'GET || Filters: {str(filters)} || Data {body}')
         raise NotImplemented('POST not Allowed!')
 
     def put(self, request, body, filters, **kwargs):
+        if hasattr(settings, 'logger'):
+            settings.logger.debug(f'GET || Filters: {str(filters)} || Data {body}')
         raise NotImplemented('PUT not Allowed!')
 
     def delete(self, request, filters, **kwargs):
+        if hasattr(settings, 'logger'):
+            settings.logger.debug(f'GET || Filters: {str(filters)}')
         raise NotImplemented('DELETE not Allowed!')
 
 

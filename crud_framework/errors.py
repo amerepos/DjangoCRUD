@@ -1,3 +1,6 @@
+from django.conf import settings
+
+
 class HttpStatus:
     HTTP_100_CONTINUE = 100
     HTTP_101_SWITCHING_PROTOCOLS = 101
@@ -73,6 +76,9 @@ class Error(Exception):
         self.field_name = field_name
         self.message = message
         self.description = description if description else message
+
+        if hasattr(settings, 'logger'):
+            settings.logger.error(f'Error: {str(dict(self))}')
 
     def __iter__(self):
         for key in self.__dict__:
