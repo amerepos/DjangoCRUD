@@ -4,6 +4,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from furl import furl
 from django.views.generic import View
+from json import loads as unjsonize
 from crud_framework.errors import Error
 
 
@@ -24,7 +25,7 @@ def view_catch_error(f):
             except:
                 filters = {}
 
-            return f(filters=filters, *args, **kwargs)
+            return f(request=request, filters=filters, *args, **kwargs)
         except Error as e:
             return JsonResponse(status=e.status, data=dict(e))
         except Exception as e:
@@ -61,27 +62,27 @@ class BaseView(View):
         else:
             return HttpResponse(status=204)
 
-    def get(self, filters):
+    def get(self, request, filters):
         raise NotImplemented('GET not Allowed!')
 
-    def post(self, body, filters, **kwargs):
+    def post(self, request, body, filters, **kwargs):
         raise NotImplemented('POST not Allowed!')
 
-    def put(self, body, filters, **kwargs):
+    def put(self, request, body, filters, **kwargs):
         raise NotImplemented('PUT not Allowed!')
 
-    def delete(self, filters, **kwargs):
+    def delete(self, request, filters, **kwargs):
         raise NotImplemented('DELETE not Allowed!')
 
 
 class BaseCrudView(BaseView):
 
-    def get(self, filters, **kwargs):
+    def get(self, request, filters, **kwargs):
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
         self.data = crud.get()
         return self._respond()
 
-    def post(self, body, filters, **kwargs):
+    def post(self, request, body, filters, **kwargs):
         print('in post')
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
 
@@ -95,7 +96,7 @@ class BaseCrudView(BaseView):
         self.data = crud.post(**body, **kwargs)
         return self._respond()
 
-    def bulk_post(self, body, filters, **kwargs):
+    def bulk_post(self, request, body, filters, **kwargs):
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
 
         for k, v in kwargs.pop('files', {}).items():
@@ -104,7 +105,7 @@ class BaseCrudView(BaseView):
         self.data = crud.bulk_post(data=body, **filters, **kwargs)
         return self._respond()
 
-    def put(self, body, filters, **kwargs):
+    def put(self, request, body, filters, **kwargs):
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
 
         for k, v in kwargs.pop('files', {}).items():
@@ -113,7 +114,7 @@ class BaseCrudView(BaseView):
         self.data = crud.put(**body, **kwargs)
         return self._respond()
 
-    def delete(self, filters, **kwargs):
+    def delete(self, request, filters, **kwargs):
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
         if not crud.delete():
             return HttpResponse(status=404)
@@ -122,4 +123,4 @@ class BaseCrudView(BaseView):
     @classmethod
     def get_doc(cls, request):
         crud = cls.SCHEMA_CLASS({})
-        return render(crud.template_path)
+        return render(request, crud.template_path)
