@@ -12,7 +12,7 @@ class CrudSchema(BaseSchema):
     SUB_CLASSES = {}  # {relation_key, CrudSchema}
     MANY_MODELS = {}  # {field_name, CrudSchema}
     ANCHOR = 'id'
-    ALWAYS_LIST = True
+    ALWAYS_LIST = True  # todo add as filter
     ORDER_BY = []
     EXPAND = True
     TRIM_NULL_VALUES = False  # TODO

@@ -9,7 +9,7 @@ from crud_framework.errors import Error
 from django.conf import settings
 
 
-def my_furl(url):
+def my_furl(url):  # TODO test injection
     args = furl(url=url).args
     res = {}
     for k in args.keys():
@@ -75,6 +75,11 @@ class BaseView(View):
             settings.logger.debug(f'GET || Filters: {str(filters)} || Data {body}')
         raise NotImplemented('POST not Allowed!')
 
+    def post_file(self, request, body, files, filters, **kwargs):
+        if hasattr(settings, 'logger'):
+            settings.logger.debug(f'GET || Filters: {str(filters)} || Data {body} || Files {files}')
+        raise NotImplemented('POST not Allowed!')
+
     def put(self, request, body, filters, **kwargs):
         if hasattr(settings, 'logger'):
             settings.logger.debug(f'GET || Filters: {str(filters)} || Data {body}')
@@ -96,8 +101,14 @@ class BaseCrudView(BaseView):
     def post(self, request, body, filters, **kwargs):
         print('in post')
         crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
+        self.data = crud.post(**body, **kwargs)
+        return self._respond()
 
-        for k, v in kwargs.pop('files', {}).items():
+    def post_file(self, request, body, files, filters, **kwargs):
+        print('in post')
+        crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
+
+        for k, v in files.items():
             # print(v.__dict__) todo change content from b''
             # with open('tmp') as t:
             #     t.write(v['file'].read())
