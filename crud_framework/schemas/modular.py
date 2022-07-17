@@ -145,6 +145,8 @@ class CrudSchema(BaseSchema):
             for field in self.MANY_MODELS.keys():
                 if field in data:
                     many_models_data[item.id].append((field, data.pop(field)))
+                else:
+                    many_models_data.pop(item.id)
 
             for key, value in data.items():
                 setattr(item, key, value)
@@ -154,9 +156,10 @@ class CrudSchema(BaseSchema):
         for item in res:
             item.save()
             item_ids.append(item.id)
-            if many_models_data[item.id]:
+            if item.id in many_models_data:
                 for field, ids in many_models_data[item.id]:
                     ids = ','.join(str(i) for i in ids)
+                    exec(f'item.{field}.clear()')
                     exec(f'item.{field}.add({ids})')
 
         self.set_queryset(filters={'id__in': item_ids})
