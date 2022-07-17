@@ -138,6 +138,7 @@ class CrudSchema(BaseSchema):
         if not self.PUT:
             raise Error(field_name=None, message='PUT not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
         res = []
+        ids = []
         for item in self.queryset:
             for key, value in data.items():
                 setattr(item, key, value)
@@ -145,6 +146,8 @@ class CrudSchema(BaseSchema):
             res.append(item)
         for item in res:
             item.save()
+            ids.append(item.id)
+        self.set_queryset(filters={'id__in': ids})
         return self.get()
 
     def delete(self, **data):
