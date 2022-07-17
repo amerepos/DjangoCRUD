@@ -119,35 +119,47 @@ class CrudSchema(BaseSchema):
             raise Error(field_name=None, message='POST not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
         if not force:
             res = []
-            ids = []
+            item_ids = []
             for item in data:
                 item = self.model_class(**item, **kwargs)
                 item.full_clean()
                 res.append(item)
             for item in res:
                 item.save()
-                ids.append(item.id)
+                item_ids.append(item.id)
         else:
             self.model_class.objects.bulk_create([self.model_class(**item, **kwargs) for item in data])
             ln = len(data)
-            ids = list(self.model_class.objects.order_by('-id')[:ln].values_list('id', flat=True))
-        self.set_queryset(filters={'id__in': ids})
+            item_ids = list(self.model_class.objects.order_by('-id')[:ln].values_list('id', flat=True))
+        self.set_queryset(filters={'id__in': item_ids})
         return self.get()
 
     def put(self, **data):
         if not self.PUT:
             raise Error(field_name=None, message='PUT not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
         res = []
-        ids = []
+        item_ids = []
+        many_models_data = {}
         for item in self.queryset:
+            many_models_data[item.id] = []
+            for field in self.MANY_MODELS.keys():
+                if field in data:
+                    many_models_data[item.id].append((field, data.pop(field)))
+
             for key, value in data.items():
                 setattr(item, key, value)
             item.full_clean()
             res.append(item)
+
         for item in res:
             item.save()
-            ids.append(item.id)
-        self.set_queryset(filters={'id__in': ids})
+            item_ids.append(item.id)
+            if many_models_data[item.id]:
+                for field, ids in many_models_data[item.id]:
+                    ids = ','.join(str(i) for i in ids)
+                    exec(f'item.{field}.add({ids})')
+
+        self.set_queryset(filters={'id__in': item_ids})
         return self.get()
 
     def delete(self, **data):
