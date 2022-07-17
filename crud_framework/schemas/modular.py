@@ -1,10 +1,13 @@
 import os
 from os.path import dirname, join
 from django.conf import settings
+
+from crud_framework.errors import Error, HttpStatus
 from crud_framework.schemas.base import BaseSchema
 
 
 class CrudSchema(BaseSchema):
+    GET, POST, PUT, DELETE = True, True, True, True
     MODEL_CLASS = None
     FIELDS = []
     MAPPED_FILTERS = {}
@@ -60,6 +63,8 @@ class CrudSchema(BaseSchema):
         self.queryset = self.model_class.objects.filter(**filters).order_by(*self.ORDER_BY)
 
     def get(self):
+        if not (self.GET or self.POST or self.PUT):
+            raise Error(field_name=None, message='GET not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
         res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS).distinct())
         total_count = len(res)
         if self.page_size > 0:
@@ -91,6 +96,8 @@ class CrudSchema(BaseSchema):
         }
 
     def post(self, **data):
+        if not self.POST:
+            raise Error(field_name=None, message='POST not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
         many_models_data = []
         for field in self.MANY_MODELS.keys():
             if field in data:
@@ -108,6 +115,8 @@ class CrudSchema(BaseSchema):
         return self.get()
 
     def bulk_post(self, data, force=False, **kwargs):
+        if not self.POST:
+            raise Error(field_name=None, message='POST not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
         if not force:
             res = []
             ids = []
@@ -126,6 +135,8 @@ class CrudSchema(BaseSchema):
         return self.get()
 
     def put(self, **data):
+        if not self.PUT:
+            raise Error(field_name=None, message='PUT not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
         res = []
         for item in self.queryset:
             for key, value in data.items():
@@ -137,6 +148,8 @@ class CrudSchema(BaseSchema):
         return self.get()
 
     def delete(self, **data):
+        if not self.DELETE:
+            raise Error(field_name=None, message='DELETE not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
         if data:  # Update date like editor before delete
             for item in self.queryset:
                 for k, v in data.items():
