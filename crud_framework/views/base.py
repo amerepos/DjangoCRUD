@@ -45,8 +45,9 @@ def view_catch_error(f):
             return JsonResponse(status=406, safe=False, data=data)
 
         except Exception as e:
-            return JsonResponse(status=406, safe=False, data=[Error(field_name=None, message=str(e),
-                                                                    description='Something unexpectedly went wrong!')])
+            return JsonResponse(status=406, safe=False,
+                                data=[dict(Error(field_name=None, message=str(e),
+                                                 description='Something unexpectedly went wrong!'))])
 
     wrap.__doc__ = f.__doc__
     wrap.__name__ = f.__name__
