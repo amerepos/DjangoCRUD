@@ -46,7 +46,7 @@ class CrudSchema(BaseSchema):
             # Order by Anchor if no ordering sent
             self.ORDER_BY = [self.ANCHOR]
 
-        self.set_queryset(filters=filters)
+        self.filters = filters if filters else {}
 
         if self.FIELDS:
             if self.ANCHOR not in self.FIELDS:
@@ -54,18 +54,17 @@ class CrudSchema(BaseSchema):
             self.FIELDS += list(self.SUB_CLASSES.keys())
             self.fields_data = [f for f in self.model_class._meta.fields if f.name in self.FIELDS]
         else:
-            self.fields_data = self.model_class._meta.fields
+                self.fields_data = self.model_class._meta.fields
         self.annotations = self.ANNOTATIONS
         self.required_fields = [f.name for f in self.fields_data if not f.blank]
 
-    def set_queryset(self, filters):
-        self.filters = filters if filters else {}
-        self.queryset = self.model_class.objects.filter(**filters).order_by(*self.ORDER_BY)
+    def get_queryset(self):
+        return self.model_class.objects.filter(**self.filters).order_by(*self.ORDER_BY)
 
     def get(self):
         if not (self.GET or self.POST or self.PUT):
             raise Error(field_name=None, message='GET not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
-        res = list(self.queryset.values(*self.FIELDS).annotate(**self.ANNOTATIONS).distinct())
+        res = list(self.get_queryset().values(*self.FIELDS).annotate(**self.ANNOTATIONS).distinct())
         total_count = len(res)
         if self.page_size > 0:
             i = (self.page_number - 1) * self.page_size
@@ -103,15 +102,15 @@ class CrudSchema(BaseSchema):
             if field in data:
                 many_models_data.append((field, data.pop(field)))
 
-        item = self.model_class(**data)
-        item.full_clean()
-        item.save()
+        self.item = self.model_class(**data)
+        self.item.full_clean()
+        self.item.save()
 
         for field, ids in many_models_data:
             ids = ','.join(str(i) for i in ids)
-            exec(f'item.{field}.add({ids})')
+            exec(f'self.item.{field}.add({ids})')
 
-        self.set_queryset(filters={'id': item.id})
+        self.filters = {'id': self.item.id}
         return self.get()
 
     def bulk_post(self, data, force=False, **kwargs):
@@ -131,7 +130,7 @@ class CrudSchema(BaseSchema):
             self.model_class.objects.bulk_create([self.model_class(**item, **kwargs) for item in data])
             ln = len(data)
             item_ids = list(self.model_class.objects.order_by('-id')[:ln].values_list('id', flat=True))
-        self.set_queryset(filters={'id__in': item_ids})
+        self.filters = {'id__in': item_ids}
         return self.get()
 
     def put(self, **data):
@@ -140,7 +139,7 @@ class CrudSchema(BaseSchema):
         res = []
         item_ids = []
         many_models_data = {}
-        for item in self.queryset:
+        for item in self.get_queryset():
             many_models_data[item.id] = []
             for field in self.MANY_MODELS.keys():
                 if field in data:
@@ -162,14 +161,14 @@ class CrudSchema(BaseSchema):
                     exec(f'item.{field}.clear()')
                     exec(f'item.{field}.add({ids})')
 
-        self.set_queryset(filters={'id__in': item_ids})
+        self.filters = {'id__in': item_ids}
         return self.get()
 
     def delete(self, **data):
         if not self.DELETE:
             raise Error(field_name=None, message='DELETE not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
         if data:  # Update date like editor before delete
-            for item in self.queryset:
+            for item in self.get_queryset():
                 for k, v in data.items():
                     setattr(item, k, v)
                 item.save()
