@@ -20,6 +20,13 @@ class BaseChoices:
                 return True
         raise Error(field_name=cls.__name__, message=f'({value}) is not a choice')
 
+    @classmethod
+    def get_field(cls, default, max_length=None, null=False, blank=True):
+        choices = cls.get_choices()
+        if not max_length:
+            max_length = max([len(v[0]) for v in choices])
+        return models.CharField(max_length=max_length, choices=choices, default=default, null=null, blank=blank)
+
 
 class BaseManager(models.Manager):
     def __init__(self, *args, **kwargs):
