@@ -30,8 +30,6 @@ class BaseManager(models.Manager):
         return self.getter_model.objects.get_queryset()
 
 
-# TODO handle errors
-# TODO Soft delete model
 class BaseModel(models.Model):
     class Meta:
         abstract = True
@@ -55,4 +53,4 @@ class BaseTrackedModel(BaseModel):
 
     @classmethod
     def get_user_field(cls):
-        raise NotImplemented('Refer user_field to filter')
+        raise NotImplemented('Refer user_field for filtering')

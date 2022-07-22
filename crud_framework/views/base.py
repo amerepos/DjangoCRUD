@@ -7,6 +7,7 @@ from django.views.generic import View
 from json import loads as unjsonize
 from crud_framework.errors import Error
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 
 def my_furl(url):  # TODO test injection
@@ -29,12 +30,23 @@ def view_catch_error(f):
                 filters = {}
 
             return f(request=request, filters=filters, *args, **kwargs)
+
         except Error as e:
-            return JsonResponse(status=e.status, data=dict(e))
+            return JsonResponse(status=e.status, safe=False, data=[dict(e)])
+
+        except ValidationError as errors:
+            data = []
+            for att, err in dict(errors).items():
+                if isinstance(err, list):
+                    err = '.\n'.join(err)
+                err = err.replace('Is deleted, ', '')
+                data.append(dict(Error(field_name=att, message=str(err))))
+
+            return JsonResponse(status=406, safe=False, data=data)
+
         except Exception as e:
-            data = dict(e)
-            data['error_message'] = str(e)
-            return JsonResponse(status=301, data=data)
+            return JsonResponse(status=406, safe=False, data=[Error(field_name=None, message=str(e),
+                                                                    description='Something unexpectedly went wrong!')])
 
     wrap.__doc__ = f.__doc__
     wrap.__name__ = f.__name__
@@ -57,7 +69,6 @@ class BaseView(View):
     def get_route_kwargs(cls):
         return dict(route=cls.get_path(), view=cls.as_view(), name=cls.SCHEMA_CLASS.__name__)
 
-    # TODO filters for class not per function
     # TODO handle foreign key
     def _respond(self):
         if self.data:
