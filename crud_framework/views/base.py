@@ -40,14 +40,14 @@ def view_catch_error(f):
                 if isinstance(err, list):
                     err = '.\n'.join(err)
                 err = err.replace('Is deleted, ', '')
+                err = err.replace('Is deleted and ', '')
                 data.append(dict(Error(field_name=att, message=str(err))))
 
             return JsonResponse(status=406, safe=False, data=data)
 
         except Exception as e:
-            return JsonResponse(status=406, safe=False,
-                                data=[dict(Error(field_name=None, message=str(e),
-                                                 description='Something unexpectedly went wrong!'))])
+            return JsonResponse(status=406, safe=False, data=[dict(Error(field_name=None, message=str(e),
+                                                                         description='Something unexpectedly went wrong!'))])
 
     wrap.__doc__ = f.__doc__
     wrap.__name__ = f.__name__
