@@ -161,14 +161,20 @@ class CrudSchema(BaseSchema):
                     exec(f'item.{field}.clear()')
                     exec(f'item.{field}.add({ids})')
 
+        if not item_ids:
+            raise Error(field_name='id', message='Item(s) not found.', status=HttpStatus.HTTP_404_NOT_FOUND)
         self.filters = {'id__in': item_ids}
         return self.get()
 
     def delete(self, **data):
         if not self.DELETE:
             raise Error(field_name=None, message='DELETE not allowed', status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED)
+
+        items = self.get_queryset()
+        if not items.exists():
+            raise Error(field_name='id', message='Item(s) not found.', status=HttpStatus.HTTP_404_NOT_FOUND)
         if data:  # Update date like editor before delete
-            for item in self.get_queryset():
+            for item in items:
                 for k, v in data.items():
                     setattr(item, k, v)
                 item.save()
