@@ -54,7 +54,7 @@ class CrudSchema(BaseSchema):
             self.FIELDS += list(self.SUB_CLASSES.keys())
             self.fields_data = [f for f in self.model_class._meta.fields if f.name in self.FIELDS]
         else:
-                self.fields_data = self.model_class._meta.fields
+            self.fields_data = self.model_class._meta.fields
         self.annotations = self.ANNOTATIONS
         self.required_fields = [f.name for f in self.fields_data if not f.blank]
 

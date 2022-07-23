@@ -24,9 +24,9 @@ class UserAwareCrudSchema(CrudSchema):
         #         code=-1, status=HttpStatus.HTTP_405_METHOD_NOT_ALLOWED, field_name='MODEL_CLASS',
         #         message='Class must be of type BaseTrackedModel', description='Class must be of type BaseTrackedModel')
 
-    def set_queryset(self, filters):
-        filters[self.USER_FIELD] = self.user
-        return super(UserAwareCrudSchema, self).set_queryset(filters)
+    def get_queryset(self):
+        self.filters[self.USER_FIELD] = self.user
+        return super(UserAwareCrudSchema, self).get_queryset()
 
     def post(self, **data):  # TODO make sure user can create
         return super(UserAwareCrudSchema, self).post(editor=self.user, **data)
