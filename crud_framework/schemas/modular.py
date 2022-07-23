@@ -1,6 +1,7 @@
 import os
 from os.path import dirname, join
 from django.conf import settings
+from django.db.models import Q
 
 from crud_framework.errors import Error, HttpStatus
 from crud_framework.schemas.base import BaseSchema
@@ -21,7 +22,7 @@ class CrudSchema(BaseSchema):
     TRIM_NULL_VALUES = False  # TODO
     PAGE_SIZE = 0
 
-    def __init__(self, filters, initkwargs=None):
+    def __init__(self, filters, q_filters, initkwargs=None):
         # self.url_path = self.URL_PATH
         self.path = self.PATH
         self.model_class = self.MODEL_CLASS
@@ -46,7 +47,7 @@ class CrudSchema(BaseSchema):
             # Order by Anchor if no ordering sent
             self.ORDER_BY = [self.ANCHOR]
 
-        self.filters = filters if filters else {}
+        self.set_filters(filters=filters, q_filters=q_filters)
 
         if self.FIELDS:
             if self.ANCHOR not in self.FIELDS:
@@ -58,8 +59,13 @@ class CrudSchema(BaseSchema):
         self.annotations = self.ANNOTATIONS
         self.required_fields = [f.name for f in self.fields_data if not f.blank]
 
+    def set_filters(self, filters=None, q_filters=None):
+        self.filters = filters if filters else {}
+        self.q_filters = q_filters if q_filters else []
+
     def get_queryset(self):
-        return self.model_class.objects.filter(**self.filters).order_by(*self.ORDER_BY)
+        queryset = self.model_class.objects.filter(*self.q_filters, **self.filters).order_by(*self.ORDER_BY)
+        return queryset
 
     def get(self):
         if not (self.GET or self.POST or self.PUT):
@@ -110,7 +116,7 @@ class CrudSchema(BaseSchema):
             ids = ','.join(str(i) for i in ids)
             exec(f'self.item.{field}.add({ids})')
 
-        self.filters = {'id': self.item.id}
+        self.set_filters(filters={'id': self.item.id})
         return self.get()
 
     def bulk_post(self, data, force=False, **kwargs):
@@ -130,7 +136,7 @@ class CrudSchema(BaseSchema):
             self.model_class.objects.bulk_create([self.model_class(**item, **kwargs) for item in data])
             ln = len(data)
             item_ids = list(self.model_class.objects.order_by('-id')[:ln].values_list('id', flat=True))
-        self.filters = {'id__in': item_ids}
+        self.set_filters(filters={'id__in': item_ids})
         return self.get()
 
     def put(self, **data):
@@ -163,7 +169,7 @@ class CrudSchema(BaseSchema):
 
         if not item_ids:
             raise Error(field_name='id', message='Item(s) not found.', status=HttpStatus.HTTP_404_NOT_FOUND)
-        self.filters = {'id__in': item_ids}
+        self.set_filters(filters={'id__in': item_ids})
         return self.get()
 
     def delete(self, **data):

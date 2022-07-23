@@ -1,4 +1,4 @@
 class FunctionalSchema:
 
-    def __init__(self, filters):  # TODO
+    def __init__(self, filters,q_filters):  # TODO
         self.path = self.PATH

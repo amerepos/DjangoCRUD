@@ -9,14 +9,35 @@ from crud_framework.errors import Error
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
+from django.db.models import Q
+
 
 def my_furl(url):  # TODO test injection
     args = furl(url=url).args
-    res = {}
+    filters = {}
+    q_filters = []
     for k in args.keys():
         vs = args.allvalues(k)
-        res[k] = vs if len(vs) > 1 else vs[0]
-    return res
+        if len(vs) > 1:  # List filter
+            filters[k] = vs
+        else:
+            vs = vs[0]  # Normal filter
+            if '|' not in vs:  # Doesnt contain OR
+                filters[k] = vs
+            else:  # OR filter
+                f = {k: vs.split('|')[0]}  # First argument
+                d = []
+                ff = Q(**f)
+                for i in vs.split('|')[1:]:  # Rest of OR arguments
+                    j = i.split('=')
+                    f = {j[0]: j[1]}
+                    d.append(Q(**f))
+
+                for f in d:
+                    ff = ff | f
+                q_filters.append((ff))
+
+    return filters, q_filters
 
 
 def view_catch_error(f):
@@ -24,12 +45,9 @@ def view_catch_error(f):
         if hasattr(settings, 'logger'):
             settings.logger.info(f'REQUEST: {request.method} || URL: {request.build_absolute_uri()}')
         try:
-            try:
-                filters = my_furl(request.build_absolute_uri())
-            except:
-                filters = {}
+            filters, q_filters = my_furl(request.build_absolute_uri())
 
-            return f(request=request, filters=filters, *args, **kwargs)
+            return f(request=request, filters=filters, q_filters=q_filters, *args, **kwargs)
 
         except Error as e:
             return JsonResponse(status=e.status, safe=False, data=[dict(e)])
@@ -77,27 +95,27 @@ class BaseView(View):
         else:
             return HttpResponse(status=204)
 
-    def get(self, request, filters):
+    def get(self, request, filters, q_filters):
         if hasattr(settings, 'logger'):
             settings.logger.debug(f'GET || Filters: {str(filters)}')
         raise NotImplemented('GET not Allowed!')
 
-    def post(self, request, body, filters, **kwargs):
+    def post(self, request, body, filters, q_filters, **kwargs):
         if hasattr(settings, 'logger'):
             settings.logger.debug(f'GET || Filters: {str(filters)} || Data {body}')
         raise NotImplemented('POST not Allowed!')
 
-    def post_file(self, request, body, files, filters, **kwargs):
+    def post_file(self, request, body, files, filters, q_filters, **kwargs):
         if hasattr(settings, 'logger'):
             settings.logger.debug(f'GET || Filters: {str(filters)} || Data {body} || Files {files}')
         raise NotImplemented('POST not Allowed!')
 
-    def put(self, request, body, filters, **kwargs):
+    def put(self, request, body, filters, q_filters, **kwargs):
         if hasattr(settings, 'logger'):
             settings.logger.debug(f'GET || Filters: {str(filters)} || Data {body}')
         raise NotImplemented('PUT not Allowed!')
 
-    def delete(self, request, filters, **kwargs):
+    def delete(self, request, filters, q_filters, **kwargs):
         if hasattr(settings, 'logger'):
             settings.logger.debug(f'GET || Filters: {str(filters)}')
         raise NotImplemented('DELETE not Allowed!')
@@ -105,20 +123,20 @@ class BaseView(View):
 
 class BaseCrudView(BaseView):
 
-    def get(self, request, filters, **kwargs):
-        crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
+    def get(self, request, filters, q_filters, **kwargs):
+        crud = self.schema_class(filters=filters, q_filters=q_filters, initkwargs=kwargs.pop('initkwargs', {}))
         self.data = crud.get()
         return self._respond()
 
-    def post(self, request, body, filters, **kwargs):
+    def post(self, request, body, filters, q_filters, **kwargs):
         print('in post')
-        crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
+        crud = self.schema_class(filters=filters, q_filters=q_filters, initkwargs=kwargs.pop('initkwargs', {}))
         self.data = crud.post(**body, **kwargs)
         return self._respond()
 
-    def post_file(self, request, body, files, filters, **kwargs):
+    def post_file(self, request, body, files, filters, q_filters, **kwargs):
         print('in post')
-        crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
+        crud = self.schema_class(filters=filters, q_filters=q_filters, initkwargs=kwargs.pop('initkwargs', {}))
 
         for k, v in files.items():
             # print(v.__dict__) todo change content from b''
@@ -130,17 +148,17 @@ class BaseCrudView(BaseView):
         self.data = crud.post(**body, **kwargs)
         return self._respond()
 
-    def bulk_post(self, request, body, filters, **kwargs):
-        crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
+    def bulk_post(self, request, body, filters, q_filters, **kwargs):
+        crud = self.schema_class(filters=filters, q_filters=q_filters, initkwargs=kwargs.pop('initkwargs', {}))
 
         for k, v in kwargs.pop('files', {}).items():
             body[k] = v
 
-        self.data = crud.bulk_post(data=body, **filters, **kwargs)
+        self.data = crud.bulk_post(data=body, **filters, **kwargs)  # TODO ,q_filters=q_filters
         return self._respond()
 
-    def put(self, request, body, filters, **kwargs):
-        crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
+    def put(self, request, body, filters, q_filters, **kwargs):
+        crud = self.schema_class(filters=filters, q_filters=q_filters, initkwargs=kwargs.pop('initkwargs', {}))
 
         for k, v in kwargs.pop('files', {}).items():
             body[k] = v
@@ -148,8 +166,8 @@ class BaseCrudView(BaseView):
         self.data = crud.put(**body, **kwargs)
         return self._respond()
 
-    def delete(self, request, filters, **kwargs):
-        crud = self.schema_class(filters=filters, initkwargs=kwargs.pop('initkwargs', {}))
+    def delete(self, request, filters, q_filters, **kwargs):
+        crud = self.schema_class(filters=filters, q_filters=q_filters, initkwargs=kwargs.pop('initkwargs', {}))
         if not crud.delete():
             return HttpResponse(status=404)
         return self._respond()
