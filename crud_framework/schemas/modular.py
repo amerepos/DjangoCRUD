@@ -22,11 +22,11 @@ class CrudSchema(BaseSchema):
     TRIM_NULL_VALUES = False  # TODO
     PAGE_SIZE = 0
 
-    def __init__(self, filters, q_filters, initkwargs=None):
+    def __init__(self, filters, q_filters=None, initkwargs=None):
         # self.url_path = self.URL_PATH
         self.path = self.PATH
         self.model_class = self.MODEL_CLASS
-        self.model_name = self.model_class.__name__
+        self.model_name = self.model_class._meta.object_name
         self.initkwargs = initkwargs if initkwargs else {}
 
         for k, v in self.MAPPED_FILTERS.items():
@@ -78,7 +78,7 @@ class CrudSchema(BaseSchema):
         for item in res:
             for relation_key, crud_schema in self.SUB_CLASSES.items():  # TODO dont call items everytime
                 model_class = crud_schema.model_class
-                model_name = model_class.__name__.lower()
+                model_name = model_class._meta.object_name.lower()
                 relation_id = item.get(relation_key)
                 if not relation_id:
                     item[model_name] = None
